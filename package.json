@@ -15,6 +15,7 @@
   "main": "background.js",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.15.4",
+    "chardet": "^0.7.0",
     "core-js": "^3.6.5",
     "dayjs": "^1.10.6",
     "iconv-lite": "^0.4.24",

@@ -497,7 +497,7 @@ import Papa from 'papaparse';
 import '@fortawesome/fontawesome-free/css/all.css';
 import '@fortawesome/fontawesome-free/js/all.js';
 import iconv from 'iconv-lite';
-import jschardet from "jschardet";
+import chardet from 'chardet';
 import placementWorker from 'workerize-loader!./placementWorker'
 
 export default {
@@ -725,11 +725,12 @@ export default {
         let oriobj = this;
         if (this.blacklistFile !== undefined) {
           let reader = new FileReader();
-          reader.readAsBinaryString(oriobj.blacklistFile);
+          reader.readAsArrayBuffer(oriobj.blacklistFile);
           reader.onload = ((file) => {
             try {
-              let encoding = jschardet.detect(file.target.result);
-              let content = iconv.decode(file.target.result, encoding.encoding);
+              let result = Buffer.from(file.target.result);
+              let encoding = chardet.detect(result);
+              let content = iconv.decode(Buffer.from(file.target.result), encoding);
               oriobj.csvError = '';
               Papa.parse(content, {
                 header: false,
@@ -755,11 +756,12 @@ export default {
         let oriobj = this;
         if (this.rankingFile !== undefined) {
           let reader = new FileReader();
-          reader.readAsBinaryString(oriobj.rankingFile);
+          reader.readAsArrayBuffer(oriobj.rankingFile);
           reader.onload = ((file) => {
             try {
-              let encoding = jschardet.detect(file.target.result);
-              let content = iconv.decode(file.target.result, encoding.encoding);
+              let result = Buffer.from(file.target.result);
+              let encoding = chardet.detect(result);
+              let content = iconv.decode(Buffer.from(file.target.result), encoding);
               oriobj.rankingError = '';
               Papa.parse(content, {
                 header: false,
@@ -799,11 +801,12 @@ export default {
         let oriobj = this;
         if (this.studentFile !== undefined) {
           let reader = new FileReader();
-          reader.readAsBinaryString(oriobj.studentFile);
+          reader.readAsArrayBuffer(oriobj.studentFile);
           reader.onload = ((file) => {
             try {
-              let encoding = jschardet.detect(file.target.result);
-              let content = iconv.decode(file.target.result, encoding.encoding);
+              let result = Buffer.from(file.target.result);
+              let encoding = chardet.detect(result);
+              let content = iconv.decode(Buffer.from(file.target.result), encoding);
               oriobj.studentError = '';
               Papa.parse(content, {
                 header: false,
@@ -843,11 +846,12 @@ export default {
         let oriobj = this;
         if (this.courseFile !== undefined) {
           let reader = new FileReader();
-          reader.readAsBinaryString(oriobj.courseFile);
+          reader.readAsArrayBuffer(oriobj.courseFile);
           reader.onload = ((file) => {
             try {
-              let encoding = jschardet.detect(file.target.result);
-              let content = iconv.decode(file.target.result, encoding.encoding);
+              let result = Buffer.from(file.target.result);
+              let encoding = chardet.detect(result);
+              let content = iconv.decode(result, encoding);
               oriobj.courseError = '';
               Papa.parse(content, {
                 header: false,
