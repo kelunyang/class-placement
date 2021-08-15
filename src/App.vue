@@ -334,6 +334,7 @@
           </v-toolbar>
           <v-card-text class='d-flex flex-column ma-1'>
             <v-alert type="info" icon="fa-info">如果你完全理解該怎麼匯入，請按左上角X關閉說明</v-alert>
+            <p>本程式的GitHub網址： https://github.com/kelunyang/class-placement ，你可以在這裡觀察看看有沒有更新檔以及原始碼</p>
             <p>要使用本程式，你需要準備至少以下兩個東西（放心，都有範例可以下載的）</p>
             <ol>
               <li>課程清單</li>

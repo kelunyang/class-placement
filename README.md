@@ -1,24 +1,3 @@
-# class-placement
+# 選課分發小工具
 
-## Project setup
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+簡單的說本程式就是讓學生用Google問卷選課後，讀入程式裡面開始按照學生的志願序分發的小程式
