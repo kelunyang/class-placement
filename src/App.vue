@@ -524,14 +524,18 @@ export default {
       let exportList = [];
       for(let i=0; i<this.studentList.length; i++) {
         let student = this.studentList[i];
+        let course = student.selectedCourse === undefined ? {
+          id: undefined,
+          name: undefined
+        } : student.selectedCourse;
         exportList.push({
           "學生唯一值": student.id,
           "學生姓名": student.name,
           "學生班級": student.class,
           "學生座號": student.no,
           "在哪個順位選到課": student.selectedOrder,
-          "選到的課程ID": student.selectedCourse.id,
-          "選到的課程名稱": student.selectedCourse.name
+          "選到的課程ID": course.id,
+          "選到的課程名稱": course.name
         });
       }
       exportList = _.orderBy(exportList, ["選到的課程ID"], ["asc"]); 
