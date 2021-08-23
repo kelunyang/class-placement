@@ -172,7 +172,13 @@
               label="學生座號欄位"
               hint="學生座號"
             ></v-select>
+            <v-switch
+              v-if='studentData.length > 0'
+              v-model="hasPrevious"
+              label="我的表單有上學期的選課結果（擋修用）"
+            ></v-switch>
             <v-select
+              v-show='hasPrevious'
               v-if='studentData.length > 0'
               :items="studentHeaders"
               v-model="studentlasttakenField"
@@ -634,13 +640,14 @@ export default {
       this.studentList = [];
       for(let i=0; i<this.studentData.length; i++) {
         let data = this.studentData[i];
+        let lastTaken = this.hasPrevious ? data[this.studentHeaders[this.studentlasttakenField].text] : undefined;
         let student = {
           tick: dayjs(data[this.studentHeaders[this.polltickField].text]).unix(),
           id: data[this.studentHeaders[this.studentidField].text],
           name: data[this.studentHeaders[this.studentnameField].text],
           class: data[this.studentHeaders[this.studentclassField].text],
           no: data[this.studentHeaders[this.studentnoField].text],
-          lastTaken: data[this.studentHeaders[this.studentlasttakenField].text],
+          lastTaken: lastTaken,
           selectedOrder: 0,
           selectedCourse: undefined,
           wishes: []
@@ -891,6 +898,7 @@ export default {
     }
   },
   data: () => ({
+    hasPrevious: false,
     preventSame: false,
     allocationDone: false,
     bgPlacement: false,
