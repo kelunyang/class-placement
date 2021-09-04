@@ -127,8 +127,8 @@
             <v-alert type="info" icon="fa-info" v-if='studentList.length === 0'>
               請先準備好學生選課問卷CSV匯出檔案，也就是把學生選課的Google問卷輸出成CSV即可
             </v-alert>
-            <v-alert type="info" icon="fa-info" v-if='studentData.length > 0'>一共讀入了{{ courseData.length }}行資料，請在下方設定好欄位對應</v-alert>
-            <v-alert type="error" icon="fa-skull" v-if='studentError !== ""'>{{ courseError }}</v-alert>
+            <v-alert type="info" icon="fa-info" v-if='studentData.length > 0'>一共讀入了{{ studentData.length }}行資料，請在下方設定好欄位對應</v-alert>
+            <v-alert type="error" icon="fa-skull" v-if='studentError !== ""'>{{ studentError }}</v-alert>
             <v-file-input accept="text/csv" prepend-icon='fa-file-csv' outlined v-model="studentFile" placeholder="請選擇學生選課問卷CSV匯出檔案"/>
             <div class='text-body-1' v-if='studentData.length > 0'>設定欄位對應</div>
             <v-alert type="info" icon="fa-info" v-if='studentData.length > 0'>特別提醒，你應該善用Google問卷強迫登入後產生在匯出檔第一欄的Email，那一定等於學校開給學生的學號Email，然後從校務行政系統會出學生的學籍，放到Excel用vlookup反查學生資訊，如果你讓學生自己填寫班級座號，那反而是不可信的（不過系統還是保留了這幾個欄位）</v-alert>
@@ -253,10 +253,18 @@
             <v-select
               v-if='courseData.length > 0'
               :items="courseHeaders"
+              v-model="minField"
+              outlined
+              label="人數限制下限欄位"
+              hint="這們課起碼要有多少人"
+            ></v-select>
+            <v-select
+              v-if='courseData.length > 0'
+              :items="courseHeaders"
               v-model="limitField"
               outlined
-              label="人數限制欄位"
-              hint="人數限制就是這堂課能允許多少人選課的意思"
+              label="人數限制上限欄位"
+              hint="這門課最多可以有多少人"
             ></v-select>
           </v-card-text>
         </v-card>
@@ -267,12 +275,22 @@
       >
         <v-card>
           <v-card-title class="text-h5" color="primary">
-            分發次數({{ allocateCounts }})
+            分發{{ allocateMin + allocateMax }}次(前{{ allocateMin }}次用最低人數／後{{ allocateMax }}次用最高人數)
           </v-card-title>
 
           <v-card-text>
+            <v-alert type="info" icon="fa-info">分發邏輯：先讓前幾次分發滿足低標人數，再滿足高標人數，最後你手動強制分發</v-alert>
+            <div class='text-body-1'>使用最低人數分發次數</div>
             <v-slider
-              v-model="allocateCounts"
+              v-model="allocateMin"
+              hint="預設值為1"
+              thumb-label
+              max="20"
+              min="1"
+            ></v-slider>
+            <div class='text-body-1'>使用最高人數分發次數</div>
+            <v-slider
+              v-model="allocateMax"
               hint="預設值為1"
               thumb-label
               max="20"
@@ -348,7 +366,9 @@
             </ol>
             <p>本程式識別學生的方式由你決定，你得找一個可以代表學生的唯一值，可能是學號、也可能是身分證字號，這裡最推薦強制學生用學校信箱登入Google問卷再填寫，這樣必然就會帶入學號了（如下圖）</p>
             <img src='@/assets/formhelp.png' />
-            <p>學生選課清單是由Google問卷匯出的步驟請看下圖</p>
+            <p>學生選課清單是由Google問卷匯出的，Google問卷的「課程志願」欄位要如下圖</p>
+            <img src='@/assets/designhelp.png' />
+            <p>匯出CSV的方式則如下圖</p>
             <img src='@/assets/csvhelp.png' />
             <p>如果你程式都執行完了，你會得到一份選課清單的CSV檔案，Excel可開啟，如果你需要用那些學號去對應查出更多東西，你可能需要使用Excel的VLookup函式，請自己Google「Vlookup + 教學」吧，很簡單的</p>
           </v-card-text>
@@ -362,7 +382,7 @@
         </v-col>
         <v-col class='blue darken-4 justify-space-between flex-row align-content-space-between'>
           <div class='text-caption white--text ma-1 text-left'>分發次數</div>
-          <div class='text-h4 white--text text-center'>{{ allocateCounts }}</div>
+          <div class='text-h4 white--text text-center'>{{ allocateMin }}/{{ allocateMax }}</div>
           <v-btn @click="allocateCountsW = true" class='red darken-4 white--text ma-1'>設定分發次數</v-btn>
         </v-col>
         <v-col class='blue darken-4 justify-space-between flex-row align-content-space-between'>
@@ -604,7 +624,7 @@ export default {
     startAllocation: async function() {
       let instance = placementWorker();
       this.bgAllocation = true;
-      this.courseList = await instance.startAllocation(this.courseList, this.preventSame);
+      this.courseList = await instance.startAllocation(this.courseList, this.preventSame, this.allocateMin, this.allocateMax);
       this.studentList = await instance.studentMapping(this.courseList, this.studentList);
       this.bgAllocation = false;
       this.allocationDone = true;
@@ -624,6 +644,7 @@ export default {
           id: course[this.courseHeaders[this.courseidField].text],
           name: course[this.courseHeaders[this.coursenameField].text],
           limit: parseInt(course[this.courseHeaders[this.limitField].text], 10),
+          min: parseInt(course[this.courseHeaders[this.minField].text], 10),
           rankingList: [],
           special: false,
           selectedStd: [],
@@ -631,7 +652,8 @@ export default {
           blockWish: ""
         });
       }
-      this.allocateCounts = 1;
+      this.allocateMax = 1;
+      this.allocateMin = 1;
       this.courseFile = undefined;
       this.courseData = [];
       this.courseDataW = false;
@@ -683,6 +705,29 @@ export default {
       element.setAttribute('href', url);
       element.setAttribute('download', filename + ".csv");
       element.click();
+    },
+    buildPlacement: function() {
+      this.placements = [];
+      for(let i=0; i<this.allocateMax + this.allocateMin; i++) {
+        this.placements.push({
+          id: uuidv4(),
+          count: i+1,
+          takenField: 0
+        })
+      }
+      for(let i=0; i<this.courseList.length; i++) {
+        let course = this.courseList[i];
+        course.placements = [];
+        for(let k=0; k<this.placements.length; k++) {
+          let place = this.placements[k];
+          course.placements.push({
+            id: uuidv4(),
+            pid: place.id,
+            count: 0,
+            students: []
+          });
+        }
+      }
     }
   },
   computed: {
@@ -707,28 +752,11 @@ export default {
     }
   },
   watch: {
-    allocateCounts: function() {
-      this.placements = [];
-      for(let i=0; i<this.allocateCounts; i++) {
-        this.placements.push({
-          id: uuidv4(),
-          count: i+1,
-          takenField: 0
-        })
-      }
-      for(let i=0; i<this.courseList.length; i++) {
-        let course = this.courseList[i];
-        course.placements = [];
-        for(let k=0; k<this.placements.length; k++) {
-          let place = this.placements[k];
-          course.placements.push({
-            id: uuidv4(),
-            pid: place.id,
-            count: 0,
-            students: []
-          });
-        }
-      }
+    allocateMax: function() {
+      this.buildPlacement();
+    },
+    allocateMin: function() {
+      this.buildPlacement();
     },
     blacklistFile: {
       immediate: true,
@@ -909,6 +937,7 @@ export default {
       id: 0,
       name: "",
       limit: 0,
+      min: 0,
       rankingList: [],
       special: false,
       placements: [],
@@ -927,6 +956,7 @@ export default {
     uniqrankingField: 0,
     rankingscoreField: 0,
     limitField: 0,
+    minField: 0,
     courseHeaders: [],
     studentHeaders: [],
     rankingHeaders: [],
@@ -946,6 +976,8 @@ export default {
     studentList: [],
     studentData: [],
     studentDataW: false,
+    allocateMax: 0,
+    allocateMin: 0,
     allocateCounts: 0,
     allocateCountsW: false,
     blackList: [],
@@ -954,12 +986,14 @@ export default {
       {
         "課號": 1,
         "課名": "一袋米扛幾樓",
-        "限制人數": 10
+        "下限人數": 10,
+        "上限人數": 20
       },
       {
         "課號": 2,
         "課名": "天竺鼠車車過馬路",
-        "限制人數": 7
+        "下限人數": 7,
+        "上限人數": 10
       }
     ],
     sampleRanking: [

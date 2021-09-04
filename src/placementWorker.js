@@ -12,41 +12,49 @@ export async function detectSelection(courseDB, studentDB) {
   return courseDB;
 }
 
-export async function startAllocation(courseDB, same) {
+export async function startAllocation(courseDB, same, min, max) {
   for(let i=0; i<courseDB.length; i++) {
     let course = courseDB[i];
     course.selectedStd = [];
-    for(let k=0; k<course.placements.length; k++) {
-      if(same) {
-        course.placements[k].students = _.filter(course.placements[k].students, (student) => {
-                      return student.lastTaken !== course.name;
-                    })
-      }
-      let placement = course.placements[k].students;
-      placement = _.filter(placement, (student) => {
-        return student.selectedCourse === undefined;
-      });
-      if(course.limit > course.selectedStd.length) {
-        if(course.rankingList.length === 0) {
-          placement = _.shuffle(placement);
-        } else {
-          placement = _.orderBy(placement, [(student) => {
-            let sValue = _.find(course.rankingList, (score) => {
-              return student.id === score.student.id;
-            });
-            return sValue === undefined ? 0 : sValue.score;
-          }], ["desc"]);
+  }
+  let times = min + max;
+  for(let k=0; k<times; k++) {
+    for(let i=0; i<courseDB.length; i++) {
+      let course = courseDB[i];
+      if(k<course.placements.length) {
+        if(same) {
+          course.placements[k].students = _.filter(course.placements[k].students, (student) => {
+                        return student.lastTaken !== course.name;
+                      })
         }
-        let slice = course.limit - course.selectedStd.length > 0 ? course.limit - course.selectedStd.length : 0;
-        placement = _.slice(placement, 0, slice);
-        course.selectedStd = _.unionWith(course.selectedStd, placement, (aStd, bStd) => {
-          return aStd.id === bStd.id;
+        let placement = course.placements[k].students;
+        let limit = k < min ? course.min : course.limit;
+        placement = _.filter(placement, (student) => {
+          return student.selectedCourse === undefined;
         });
-        for(let o=0; o<course.selectedStd.length; o++) {
-          let student = course.selectedStd[o];
-          if(student.selectedOrder === 0) {
-            student.selectedOrder = k + 1;
-            student.selectedCourse = course;
+        if(limit > course.selectedStd.length) {
+          if(course.rankingList.length === 0) {
+            placement = _.shuffle(placement);
+          } else {
+            placement = _.orderBy(placement, [(student) => {
+              let sValue = _.find(course.rankingList, (score) => {
+                return student.id === score.student.id;
+              });
+              return sValue === undefined ? 0 : sValue.score;
+            }], ["desc"]);
+          }
+          let slice = limit - course.selectedStd.length > 0 ? limit - course.selectedStd.length : 0;
+          console.log(course.name + ":" + slice);
+          placement = _.slice(placement, 0, slice);
+          course.selectedStd = _.unionWith(course.selectedStd, placement, (aStd, bStd) => {
+            return aStd.id === bStd.id;
+          });
+          for(let o=0; o<course.selectedStd.length; o++) {
+            let student = course.selectedStd[o];
+            if(student.selectedOrder === 0) {
+              student.selectedOrder = k + 1;
+              student.selectedCourse = course;
+            }
           }
         }
       }
